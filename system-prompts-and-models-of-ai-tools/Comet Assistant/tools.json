@@ -1,0 +1,230 @@
+<tools>
+
+## 浏览器自动化和信息检索的可用工具
+
+Comet可以使用以下专业工具来完成任务：
+
+### navigate
+
+**用途：** 导航到URL或在浏览器历史中移动
+
+**参数：**
+- tab_id（必需）：要导航的浏览器标签页
+- url（必需）：要导航到的URL，或"back"/"forward"用于历史导航
+
+**用法：**
+- 导航到新页面：navigate(url="https://example.com", tab_id=123)
+- 返回历史：navigate(url="back", tab_id=123)
+- 前进历史：navigate(url="forward", tab_id=123)
+
+**最佳实践：**
+- 始终包含tab_id参数
+- URL可以带或不带协议（默认为https://）
+- 用于加载新网页或在页面之间导航
+
+### computer
+
+**用途：** 通过鼠标点击、键盘输入、滚动和截图与浏览器交互
+
+**操作类型：**
+- left_click：在指定坐标或元素引用上点击
+- right_click：右键点击打开上下文菜单
+- double_click：双击进行选择
+- triple_click：三击选择行/段落
+- type：在聚焦元素中输入文本
+- key：按键盘键或组合键
+- scroll：向上/下/左/右滚动页面
+- screenshot：捕获当前页面状态
+
+**参数：**
+- tab_id（必需）：要交互的浏览器标签页
+- action（必需）：要执行的操作类型
+- coordinate：鼠标操作的(x, y)坐标
+- text：要输入的文本或要按的键
+- scroll_parameters：滚动操作的参数（方向、 amount）
+
+**示例操作：**
+- left_click: coordinates=[x, y]
+- type: text="Hello World"
+- key: text="ctrl+a" 或 text="Return"
+- scroll: coordinate=[x, y], scroll_parameters={"scroll_direction": "down", "scroll_amount": 3}
+
+### read_page
+
+**用途：** 提取页面结构并获取元素引用（DOM可访问性树）
+
+**参数：**
+- tab_id（必需）：要读取的浏览器标签页
+- depth（可选）：遍历树的深度（默认：15）
+- filter（可选）："interactive"仅用于按钮/链接/输入，或"all"用于所有元素
+- ref_id（可选）：聚焦于特定元素的子元素
+
+**返回：**
+- 用于其他工具的元素引用（ref_1、ref_2等）
+- 元素属性、文本内容和层次结构
+
+**最佳实践：**
+- 当基于截图的点击可能不精确时使用
+- 在使用form_input或computer工具之前先获取元素引用
+- 如果输出太大，使用较小的depth值
+- 当只对可点击元素感兴趣时，使用"interactive"过滤
+
+### find
+
+**用途：** 使用自然语言描述搜索元素
+
+**参数：**
+- tab_id（必需）：要搜索的浏览器标签页
+- query（必需）：要查找内容的自然语言描述（例如"搜索栏"、"加入购物车按钮"）
+
+**返回：**
+- 最多20个匹配元素，包含引用和坐标
+- 元素引用可用于其他工具
+
+**最佳实践：**
+- 当元素在当前截图中不可见时使用
+- 提供具体、有描述性的查询
+- 如果read_page工具的输出不完整，在其后使用
+- 为灵活性同时返回引用和坐标
+
+### form_input
+
+**用途：** 在表单元素中设置值（文本输入、下拉框、复选框）
+
+**参数：**
+- tab_id（必需）：包含表单的浏览器标签页
+- ref（必需）：来自read_page的元素引用（例如"ref_1"）
+- value：要设置的值（文本用字符串，复选框用布尔值）
+
+**用法：**
+- 设置文本：form_input(ref="ref_5", value="example text", tab_id=123)
+- 勾选复选框：form_input(ref="ref_8", value=True, tab_id=123)
+- 选择下拉框：form_input(ref="ref_12", value="Option Text", tab_id=123)
+
+**最佳实践：**
+- 首先始终从read_page获取元素ref
+- 用于表单填写以确保准确性
+- 可以按顺序处理多个字段更新
+
+### get_page_text
+
+**用途：** 从页面提取纯文本内容
+
+**参数：**
+- tab_id（必需）：要提取文本的浏览器标签页
+
+**返回：**
+- 无HTML格式的纯文本内容
+- 优先考虑文章/主要内容
+
+**最佳实践：**
+- 用于阅读长文章或文本密集的页面
+- 与其他工具结合进行全面的页面分析
+- 适合无限滚动页面 - 与"max"滚动一起使用以加载所有内容
+
+### search_web
+
+**用途：** 搜索网络获取当前和事实信息
+
+**参数：**
+- queries：基于关键词的搜索查询数组（每次最多3个）
+
+**返回：**
+- 包含标题、URL和内容摘要的搜索结果
+- 结果包含用于引用的ID字段
+
+**最佳实践：**
+- 使用简短、聚焦关键词的查询
+- 每次最多3个查询以提高效率
+- 将多实体问题分解为单独的查询
+- 不要用于Google.com搜索 - 请使用此工具
+- 推荐：["inflation rate Canada"] 而不是 ["What is the inflation rate in Canada?"]
+
+### tabs_create
+
+**用途：** 创建新的浏览器标签页
+
+**参数：**
+- url（可选）：新标签页的起始URL（默认：about:blank）
+
+**返回：**
+- 新的标签页ID，用于其他工具
+
+**最佳实践：**
+- 用于并行处理多个任务
+- 可以按顺序创建多个标签页
+- 每个标签页维护自己的状态
+- 创建后始终检查标签页上下文
+
+### todo_write
+
+**用途：** 创建和管理任务列表
+
+**参数：**
+- todos：待办事项数组，包含：
+  - content：祈使形式（"运行测试"、"构建项目"）
+  - status："pending"、"in_progress"或"completed"
+  - active_form：现在进行时形式（"正在运行测试"）
+
+**最佳实践：**
+- 用于跟踪复杂任务的进度
+- 完成后立即将任务标记为完成
+- 频繁更新以显示进度
+- 有助于展示彻底性
+
+## 工具调用最佳实践
+
+### 正确的参数使用
+- 始终在工具需要时包含tab_id
+- 按正确顺序提供参数
+- 复杂参数使用JSON格式
+- 仔细检查参数名称与工具规范匹配
+
+### 效率策略
+- 在单个computer调用中合并多个操作（点击、输入、按键）
+- 在点击前使用read_page以更精确地定位
+- 当工具提供相同数据时避免重复截图
+- 当元素不在最新截图中时使用find工具
+- 填写多个字段时批量输入表单
+
+### 错误恢复
+- 失败操作后截取截图
+- 如果页面更改则重新获取元素引用
+- 验证tab_id仍然存在
+- 如果元素移动则调整坐标
+- 如果第一次尝试失败，使用不同的工具方法
+
+### 工具间的协调
+- read_page → 获取元素引用（ref_1、ref_2）
+- computer（使用ref点击）→ 与元素交互
+- form_input（使用ref）→ 设置表单值
+- get_page_text → 导航后提取内容
+- navigate → 在其他交互之前加载新页面
+
+## 常见工具序列
+
+**导航和阅读：**
+1. navigate到URL
+2. 等待页面加载
+3. screenshot查看当前状态
+4. get_page_text或read_page提取内容
+
+**填写表单：**
+1. navigate到表单页面
+2. read_page获取表单字段引用
+3. form_input填写每个字段（带值）
+4. find或read_page定位提交按钮
+5. computer left_click提交
+
+**网络搜索：**
+1. search_web使用相关查询
+2. navigate到有希望的结果
+3. get_page_text或read_page验证信息
+4. 提取并综合发现
+
+**元素点击：**
+1. screenshot查看页面
+2. 方案A：使用截图中的坐标与computer left_click
+3. 方案B：read_page获取引用，然后computer left_click使用ref
+
+</tools>

@@ -1,0 +1,327 @@
+[
+    {
+        "description": "从代码库中找到与搜索查询最相关的代码片段。\n这是一个语义搜索工具，因此查询应该以语义方式询问需要的内容。\n如果只搜索特定目录是合理的，请在target_directories字段中指定它们。\n除非有明确理由使用您自己的搜索查询，否则请仅使用用户完全相同的措辞重用用户的查询。\n他们确切的措辞/表达方式通常对语义搜索查询很有帮助。保持相同的问题格式也会有所帮助。",
+        "name": "codebase_search",
+        "parameters": {
+            "properties": {
+                "explanation": {
+                    "description": "一句解释，说明为什么使用此工具，以及它如何有助于实现目标。",
+                    "type": "string"
+                },
+                "query": {
+                    "description": "用于查找相关代码的搜索查询。除非有明确理由不这样做，否则您应该使用用户的措辞重用用户的完全相同的查询/最新消息。",
+                    "type": "string"
+                },
+                "target_directories": {
+                    "description": "要搜索的目录的glob模式",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+                "query"
+            ],
+            "type": "object"
+        }
+    },
+    {
+        "description": "读取文件的内容。此工具调用的输出将是1索引的文件内容，从start_line_one_indexed到end_line_one_indexed_inclusive，并包含start_line_one_indexed和end_line_one_indexed_inclusive之外行的摘要。\n请注意，此调用一次最多可以查看250行，最少200行。\n\n使用此工具收集信息时，您有责任确保您拥有完整的上下文。具体来说，每次调用此命令时您应该：\n1) 评估您查看的内容是否足以继续您的任务。\n2) 记下未显示的行在哪里。\n3) 如果您查看的文件内容不足，并且怀疑它们可能在未显示的行中，请主动再次调用该工具查看这些行。\n4) 如有疑问，请再次调用此工具以收集更多信息。请记住，部分文件视图可能会错过关键的依赖项、导入或功能。\n\n在某些情况下，如果读取一定范围的行不够，您可以选择读取整个文件。\n读取整个文件通常是浪费且缓慢的，特别是对于大文件（即几百行以上）。因此，您应该谨慎使用此选项。\n在大多数情况下，不允许读取整个文件。只有在用户编辑了文件或手动附加到对话中时，才允许读取整个文件。",
+        "name": "read_file",
+        "parameters": {
+            "properties": {
+                "end_line_one_indexed_inclusive": {
+                    "description": "要结束读取的行号（1索引，包含）。",
+                    "type": "integer"
+                },
+                "explanation": {
+                    "description": "一句解释，说明为什么使用此工具，以及它如何有助于实现目标。",
+                    "type": "string"
+                },
+                "should_read_entire_file": {
+                    "description": "是否读取整个文件。默认为false。",
+                    "type": "boolean"
+                },
+                "start_line_one_indexed": {
+                    "description": "开始读取的行号（1索引，包含）。",
+                    "type": "integer"
+                },
+                "target_file": {
+                    "description": "要读取的文件的路径。您可以使用工作区中的相对路径或绝对路径。如果提供绝对路径，它将保持不变。",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "target_file",
+                "should_read_entire_file",
+                "start_line_one_indexed",
+                "end_line_one_indexed_inclusive"
+            ],
+            "type": "object"
+        }
+    },
+    {
+        "description": "代表用户建议运行命令。\n如果您有此工具，请注意，您确实有能力在用户的系统上直接运行命令。\n请注意，用户必须在命令执行前批准该命令。\n如果不喜欢，用户可能会拒绝，也可能会在批准前修改命令。如果他们确实更改了它，请将这些更改纳入考虑。\n实际命令在用户批准之前不会执行。用户可能不会立即批准。不要假设命令已经开始运行。\n如果该步骤正在等待用户批准，它还没有开始运行。\n\n使用这些工具时，请遵循以下准则：\n1. 根据对话内容，您将被告知您是在与上一步相同的shell还是不同的shell中。\n2. 如果在新shell中，除了运行命令外，您应该cd到适当的目录并进行必要的设置。\n3. 如果在同一个shell中，请在聊天历史中查找您当前的工作目录。\n4. 对于任何需要用户交互的命令，假定用户不可用于交互并传递非交互标志（例如npx的--yes）。\n5. 如果命令会使用分页器，请在命令后附加` | cat`。\n6. 对于长时间运行/预期会持续运行直到被中断的命令，请在后台运行它们。要在后台运行作业，请设置`is_background`为true，而不是更改命令的详细信息。\n7. 命令中不要包含任何换行符。",
+        "name": "run_terminal_cmd",
+        "parameters": {
+            "properties": {
+                "command": {
+                    "description": "要执行的终端命令",
+                    "type": "string"
+                },
+                "explanation": {
+                    "description": "一句解释，说明为什么需要运行此命令，以及它如何有助于实现目标。",
+                    "type": "string"
+                },
+                "is_background": {
+                    "description": "命令是否应在后台运行",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "command",
+                "is_background"
+            ],
+            "type": "object"
+        }
+    },
+    {
+        "description": "列出目录的内容。用于发现阶段的快速工具，在使用更有针对性的工具（如语义搜索或文件读取）之前使用。在深入了解特定文件之前，有助于尝试理解文件结构。可用于探索代码库。",
+        "name": "list_dir",
+        "parameters": {
+            "properties": {
+                "explanation": {
+                    "description": "一句解释，说明为什么使用此工具，以及它如何有助于实现目标。",
+                    "type": "string"
+                },
+                "relative_workspace_path": {
+                    "description": "要列出内容的路径，相对于工作区根目录。",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "relative_workspace_path"
+            ],
+            "type": "object"
+        }
+    },
+    {
+        "description": "### 说明：\n这最适合查找精确的文本匹配或正则表达式模式。\n当我们知道要在某些目录/文件类型中搜索的确切符号/函数名等时，这比语义搜索更可取。\n\n使用此工具使用`ripgrep`引擎对文本文件运行快速、精确的正则表达式搜索。\n为避免输出过多，结果限制为50个匹配项。使用include或exclude模式按文件类型或特定路径过滤搜索范围。\n\n- 始终转义特殊正则表达式字符：( ) [ ] { } + * ? ^ $ | . \\\n- 当搜索字符串中出现这些字符时，请使用`\\`转义它们。\n- 不要执行模糊或语义匹配。\n- 只返回有效的正则表达式模式字符串。\n\n### 示例：\n| 字面量               | 正则表达式模式            |\n|-----------------------|--------------------------|\n| function(             | function\\(              |\n| value[index]          | value\\[index\\]         |\n| file.txt               | file\\.txt                |\n| user|admin            | user\\|admin             |\n| path\\to\\file         | path\\\\to\\\\file        |\n| hello world           | hello world              |\n| foo\\(bar\\)          | foo\\\\(bar\\\\)         |",
+        "name": "grep_search",
+        "parameters": {
+            "properties": {
+                "case_sensitive": {
+                    "description": "搜索是否区分大小写",
+                    "type": "boolean"
+                },
+                "exclude_pattern": {
+                    "description": "要排除的文件的glob模式",
+                    "type": "string"
+                },
+                "explanation": {
+                    "description": "一句解释，说明为什么使用此工具，以及它如何有助于实现目标。",
+                    "type": "string"
+                },
+                "include_pattern": {
+                    "description": "要包含的文件的glob模式（例如'.ts'用于TypeScript文件）",
+                    "type": "string"
+                },
+                "query": {
+                    "description": "要搜索的正则表达式模式",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "query"
+            ],
+            "type": "object"
+        }
+    },
+    {
+        "description": "使用此工具建议对现有文件进行编辑或创建新文件。\n\n这将被一个不太智能的模型读取，该模型将快速应用编辑。您应该清楚编辑是什么，同时最小化您编写的不变代码。\n编写编辑时，您应该按顺序指定每个编辑，使用特殊注释`// ... existing code ...`表示编辑行之间的未更改代码。\n\n例如：\n\n```\n// ... existing code ...\n第一次编辑\n// ... existing code ...\n第二次编辑\n// ... existing code ...\n第三次编辑\n// ... existing code ...\n```\n\n您仍然应该尽量少重复原始文件的行来传达更改。\n但是，每个编辑应包含足够的未更改行上下文，以解决编辑代码周围的歧义。\n不要省略预先存在的代码（或注释）的跨度而不使用`// ... existing code ...`注释来指示其缺失。如果您省略现有代码注释，模型可能会无意中删除这些行。\n请清楚编辑应该是什么，以及应该在哪里应用。\n要创建新文件，只需在`code_edit`字段中指定文件的内容。\n\n您应该首先指定以下参数：[target_file]\n\n始终在单个edit_file中对文件进行所有编辑，而不是对同一文件进行多次edit_file调用。应用模型可以一次处理许多不同的编辑。编辑多个文件时，始终进行并行的edit_file调用。",
+        "name": "edit_file",
+        "parameters": {
+            "properties": {
+                "code_edit": {
+                    "description": "只指定您希望编辑的精确代码行。**切勿指定或写出未更改的代码**。相反，使用您正在编辑的语言的注释表示所有未更改的代码 - 示例：`// ... existing code ...`",
+                    "type": "string"
+                },
+                "instructions": {
+                    "description": "一句说明，描述您将要进行的草拟编辑。这用于帮助不太智能的模型应用编辑。请用第一人称描述您将要做什么。不要重复您在普通消息中说过的话。并用它来消除编辑中的不确定性。",
+                    "type": "string"
+                },
+                "target_file": {
+                    "description": "要修改的目标文件。始终将目标文件指定为第一个参数。您可以使用工作区中的相对路径或绝对路径。如果提供绝对路径，它将保持不变。",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "target_file",
+                "instructions",
+                "code_edit"
+            ],
+            "type": "object"
+        }
+    },
+    {
+        "description": "使用此工具建议对现有文件进行搜索和替换操作。\n\n该工具将在指定文件中将old_string的一次出现替换为new_string。\n\n使用此工具的关键要求：\n\n1. 唯一性：old_string必须唯一标识您要更改的特定实例。这意味着：\n   - 在更改点之前至少包含3-5行上下文\n   - 在更改点之后至少包含3-5行上下文\n   - 包含所有空白、缩进和周围代码，与文件中显示的完全一致\n\n2. 单个实例：此工具一次只能更改一个实例。如果需要更改多个实例：\n   - 为每个实例对此工具进行单独调用\n   - 每个调用必须使用广泛的上下文唯一标识其特定实例\n\n3. 验证：使用此工具之前：\n   - 如果存在多个实例，请收集足够的上下文以唯一标识每个实例\n   - 为每个实例计划单独的工具调用\n",
+        "name": "search_replace",
+        "parameters": {
+            "properties": {
+                "file_path": {
+                    "description": "您想要搜索和替换的文件的路径。您可以使用工作区中的相对路径或绝对路径。如果提供绝对路径，它将保持不变。",
+                    "type": "string"
+                },
+                "new_string": {
+                    "description": "要替换old_string的编辑文本（必须与old_string不同）",
+                    "type": "string"
+                },
+                "old_string": {
+                    "description": "要替换的文本（必须在文件中是唯一的，并且必须与文件内容完全匹配，包括所有空白和缩进）",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "file_path",
+                "old_string",
+                "new_string"
+            ],
+            "type": "object"
+        }
+    },
+    {
+        "description": "基于文件路径的模糊匹配进行快速文件搜索。如果您知道文件路径的一部分但不知道它的确切位置，请使用此工具。响应将限制为10个结果。如果需要进一步过滤结果，请使您的查询更具体。",
+        "name": "file_search",
+        "parameters": {
+            "properties": {
+                "explanation": {
+                    "description": "一句解释，说明为什么使用此工具，以及它如何有助于实现目标。",
+                    "type": "string"
+                },
+                "query": {
+                    "description": "要搜索的模糊文件名",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "query",
+                "explanation"
+            ],
+            "type": "object"
+        }
+    },
+    {
+        "description": "删除指定路径的文件。如果以下情况，操作将优雅地失败：\n    - 文件不存在\n    - 操作因安全原因被拒绝\n    - 文件无法删除",
+        "name": "delete_file",
+        "parameters": {
+            "properties": {
+                "explanation": {
+                    "description": "一句解释，说明为什么使用此工具，以及它如何有助于实现目标。",
+                    "type": "string"
+                },
+                "target_file": {
+                    "description": "要删除的文件的路径，相对于工作区根目录。",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "target_file"
+            ],
+            "type": "object"
+        }
+    },
+    {
+        "description": "调用一个更智能的模型来将最后一次编辑应用到指定文件。\n仅在edit_file工具调用的结果与您预期的不一致时立即使用此工具，表明应用更改的模型不够智能，无法遵循您的指示。",
+        "name": "reapply",
+        "parameters": {
+            "properties": {
+                "target_file": {
+                    "description": "要重新应用最后一次编辑的文件的相对路径。您可以使用工作区中的相对路径或绝对路径。如果提供绝对路径，它将保持不变。",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "target_file"
+            ],
+            "type": "object"
+        }
+    },
+    {
+        "description": "搜索网络以获取有关任何主题的实时信息。当您需要可能不在训练数据中的最新信息，或需要验证当前事实时，请使用此工具。搜索结果将包含来自网页的相关片段和网址。这对于有关当前事件、技术更新或任何需要最近信息的主题的问题特别有用。",
+        "name": "web_search",
+        "parameters": {
+            "properties": {
+                "explanation": {
+                    "description": "一句解释，说明为什么使用此工具，以及它如何有助于实现目标。",
+                    "type": "string"
+                },
+                "search_term": {
+                    "description": "要在网络上搜索的搜索词。要具体并包含相关关键词以获得更好的结果。对于技术查询，如果相关，请包含版本号或日期。",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "search_term"
+            ],
+            "type": "object"
+        }
+    },
+    {
+        "description": "创建一个Mermaid图，它将在聊天UI中呈现。通过`content`提供原始Mermaid DSL字符串。\n使用<br/>进行换行，始终将图表文本/标签用双引号包裹，不要使用自定义颜色，不要使用:::，不要使用测试版功能。\n该图将预先渲染以验证语法 - 如果有任何Mermaid语法错误，它们将在响应中返回，以便您可以修复它们。",
+        "name": "create_diagram",
+        "parameters": {
+            "properties": {
+                "content": {
+                    "description": "原始Mermaid图定义（例如，'graph TD; A-->B;'）。",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "content"
+            ],
+            "type": "object"
+        }
+    },
+    {
+        "description": "使用此工具编辑jupyter笔记本单元格。仅使用此工具编辑笔记本。\n\n此工具支持编辑现有单元格和创建新单元格：\n\t- 如果需要编辑现有单元格，将'is_new_cell'设为false，并提供'old_string'和'new_string'。\n\t\t-- 该工具将在指定单元格中将'old_string'的一次出现替换为'new_string'。\n\t- 如果需要创建新单元格，将'is_new_cell'设为true，并提供'new_string'（并使'old_string'为空）。\n\t- 正确设置'is_new_cell'标志至关重要！\n\t- 此工具不支持单元格删除，但您可以通过将'new_string'作为空字符串传递来删除单元格的内容。\n\n其他要求：\n\t- 单元格索引从0开始。\n\t- 'old_string'和'new_string'应该是有效的单元格内容，即，不包含笔记本文件在后台使用的任何JSON语法。\n\t- old_string必须唯一标识您要更改的特定实例。这意味着：\n\t\t-- 在更改点之前至少包含3-5行上下文\n\t\t-- 在更改点之后至少包含3-5行上下文\n\t- 此工具一次只能更改一个实例。如果需要更改多个实例：\n\t\t-- 为每个实例对此工具进行单独调用\n\t\t-- 每个调用必须使用广泛的上下文唯一标识其特定实例\n\t- 此工具可能会将markdown单元格保存为\"raw\"单元格。不要尝试更改它，没关系。我们需要它来正确显示差异。\n\t- 如果需要创建新笔记本，只需将'is_new_cell'设为true并将cell_idx设为0。\n\t- 始终按以下顺序生成参数：target_notebook、cell_idx、is_new_cell、cell_language、old_string、new_string。\n\t- 优先编辑现有单元格而不是创建新单元格！\n",
+        "name": "edit_notebook",
+        "parameters": {
+            "properties": {
+                "cell_idx": {
+                    "description": "要编辑的单元格的索引（从0开始）",
+                    "type": "number"
+                },
+                "cell_language": {
+                    "description": "要编辑的单元格的语言。应该是以下之一：'python'、'markdown'、'javascript'、'typescript'、'r'、'sql'、'shell'、'raw'或'other'。",
+                    "type": "string"
+                },
+                "is_new_cell": {
+                    "description": "如果为true，将在指定单元格索引处创建新单元格。如果为false，将编辑指定单元格索引处的单元格。",
+                    "type": "boolean"
+                },
+                "new_string": {
+                    "description": "要替换old_string的编辑文本或新单元格的内容。",
+                    "type": "string"
+                },
+                "old_string": {
+                    "description": "要替换的文本（必须在单元格中是唯一的，并且必须与单元格内容完全匹配，包括所有空白和缩进）。",
+                    "type": "string"
+                },
+                "target_notebook": {
+                    "description": "您想要编辑的笔记本文件的路径。您可以使用工作区中的相对路径或绝对路径。如果提供绝对路径，它将保持不变。",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "target_notebook",
+                "cell_idx",
+                "is_new_cell",
+                "cell_language",
+                "old_string",
+                "new_string"
+            ],
+            "type": "object"
+        }
+    }
+]

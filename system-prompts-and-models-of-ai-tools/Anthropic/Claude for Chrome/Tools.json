@@ -1,0 +1,504 @@
+[
+  {
+    "name": "computer",
+    "description": "使用鼠标和键盘与网页浏览器交互，并进行截图。如果您没有有效的标签页ID，首先使用tabs_context获取可用的标签页。\n* 每当您打算点击诸如图标之类的元素时，您应该先查看截图以确定元素的坐标，然后再移动光标。\n* 如果您尝试点击某个程序或链接但加载失败，即使等待后也是如此，请尝试调整点击位置，使光标尖端在视觉上落在您想要点击的元素上。\n* 确保用光标尖端点击任何按钮、链接、图标等，位于元素的中心。除非另有要求，否则不要点击框的边缘。",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "left_click",
+            "right_click",
+            "type",
+            "screenshot",
+            "wait",
+            "scroll",
+            "key",
+            "left_click_drag",
+            "double_click",
+            "triple_click",
+            "zoom",
+            "scroll_to",
+            "hover"
+          ],
+          "description": "要执行的操作：\n* `left_click`：在指定坐标处点击鼠标左键。\n* `right_click`：在指定坐标处点击鼠标右键以打开上下文菜单。\n* `double_click`：在指定坐标处双击鼠标左键。\n* `triple_click`：在指定坐标处三击鼠标左键。\n* `type`：输入一串文本。\n* `screenshot`：对屏幕进行截图。\n* `wait`：等待指定的秒数。\n* `scroll`：在指定坐标处向上、下、左或右滚动。\n* `key`：按下特定的键盘键。\n* `left_click_drag`：从start_coordinate拖动到坐标。\n* `zoom`：对特定区域进行截图以便仔细检查。\n* `scroll_to`：使用read_page或find工具中的元素引用ID将元素滚动到视图中。\n* `hover`：将鼠标光标移动到指定坐标或元素而不点击。用于显示工具提示、下拉菜单或触发悬停状态。"
+        },
+        "coordinate": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "(x, y)：x（从左边缘起的像素）和y（从顶边缘起的像素）坐标。对`left_click`、`right_click`、`double_click`、`triple_click`和`scroll`是必需的。对于`left_click_drag`，这是结束位置。"
+        },
+        "text": {
+          "type": "string",
+          "description": "要输入的文本（对于`type`动作）或要按下的键（对于`key`动作）。对于`key`动作：提供以空格分隔的键（例如，\"Backspace Backspace Delete\"）。支持使用平台修饰键的键盘快捷键（在Mac上使用\"cmd\"，在Windows/Linux上使用\"ctrl\"，例如\"cmd+a\"或\"ctrl+a\"全选）。"
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30,
+          "description": "等待的秒数。对`wait`是必需的。最长30秒。"
+        },
+        "scroll_direction": {
+          "type": "string",
+          "enum": [
+            "up",
+            "down",
+            "left",
+            "right"
+          ],
+          "description": "滚动方向。对`scroll`是必需的。"
+        },
+        "scroll_amount": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "滚动轮滚动的次数。对`scroll`是可选的，默认为3。"
+        },
+        "start_coordinate": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "(x, y)：`left_click_drag`的起始坐标。"
+        },
+        "region": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4,
+          "description": "(x0, y0, x1, y1)：为`zoom`捕获的矩形区域。坐标定义从视口原点左上角(x0, y0)到右下角(x1, y1)的矩形（以像素为单位）。对`zoom`动作是必需的。用于检查小UI元素，如图标、按钮或文本。"
+        },
+        "repeat": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "重复按键序列的次数。仅适用于`key`动作。必须是1到100之间的正整数。默认为1。对导航任务有用，如多次按方向键。"
+        },
+        "ref": {
+          "type": "string",
+          "description": "来自read_page或find工具的元素引用ID（例如，\"ref_1\"、\"ref_2\"）。对`scroll_to`动作是必需的。可用作点击动作的坐标替代方案。"
+        },
+        "modifiers": {
+          "type": "string",
+          "description": "点击动作的修饰键。支持：\"ctrl\"、\"shift\"、\"alt\"、\"cmd\"（或\"meta\"）、\"win\"（或\"windows\"）。可以与\"+\"组合（例如，\"ctrl+shift\"、\"cmd+alt\"）。可选。"
+        },
+        "tabId": {
+          "type": "number",
+          "description": "执行动作的标签页ID。必须是当前组中的标签页。如果您没有有效的标签页ID，首先使用tabs_context。"
+        }
+      },
+      "required": [
+        "action",
+        "tabId"
+      ]
+    }
+  },
+  {
+    "name": "find",
+    "description": "使用自然语言在页面上查找元素。可以按其用途（例如，\"搜索栏\"、\"登录按钮\"）或按文本内容（例如，\"有机芒果产品\"）搜索元素。返回最多20个匹配元素，这些元素具有可与其他工具一起使用的引用。如果存在超过20个匹配项，系统会通知您使用更具体的查询。如果您没有有效的标签页ID，首先使用tabs_context获取可用的标签页。",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "要查找内容的自然语言描述（例如，\"搜索栏\"、\"加入购物车按钮\"、\"包含有机的产品标题\"）"
+        },
+        "tabId": {
+          "type": "number",
+          "description": "要搜索的标签页ID。必须是当前组中的标签页。如果您没有有效的标签页ID，首先使用tabs_context。"
+        }
+      },
+      "required": [
+        "query",
+        "tabId"
+      ]
+    }
+  },
+  {
+    "name": "form_input",
+    "description": "使用read_page工具的元素引用ID设置表单元素的值。如果您没有有效的标签页ID，首先使用tabs_context获取可用的标签页。",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "ref": {
+          "type": "string",
+          "description": "来自read_page工具的元素引用ID（例如，\"ref_1\"、\"ref_2\"）"
+        },
+        "value": {
+          "type": [
+            "string",
+            "boolean",
+            "number"
+          ],
+          "description": "要设置的值。对于复选框使用布尔值，对于选择框使用选项值或文本，对于其他输入使用适当的字符串/数字"
+        },
+        "tabId": {
+          "type": "number",
+          "description": "设置表单值的标签页ID。必须是当前组中的标签页。如果您没有有效的标签页ID，首先使用tabs_context。"
+        }
+      },
+      "required": [
+        "ref",
+        "value",
+        "tabId"
+      ]
+    }
+  },
+  {
+    "name": "get_page_text",
+    "description": "从页面提取原始文本内容，优先处理文章内容。非常适合阅读文章、博客帖子或其他文字较多的页面。返回纯文本，不含HTML格式。如果您没有有效的标签页ID，首先使用tabs_context获取可用的标签页。",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "tabId": {
+          "type": "number",
+          "description": "要提取文本的标签页ID。必须是当前组中的标签页。如果您没有有效的标签页ID，首先使用tabs_context。"
+        }
+      },
+      "required": [
+        "tabId"
+      ]
+    }
+  },
+  {
+    "name": "gif_creator",
+    "description": "管理浏览器自动化会话的GIF录制和导出。控制何时开始/停止录制浏览器操作（点击、滚动、导航），然后导出为带有视觉叠加的动画GIF（点击指示器、操作标签、进度条、水印）。所有操作都限定在标签页组的作用域内。开始录制时，立即截图以捕获初始状态作为第一帧。停止录制时，立即截图以捕获最终状态作为最后一帧。对于导出，提供'coordinate'以拖放上传到页面元素，或设置'download: true'以下载GIF。",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "start_recording",
+            "stop_recording",
+            "export",
+            "clear"
+          ],
+          "description": "要执行的操作：'start_recording'（开始捕获）、'stop_recording'（停止捕获但保留帧）、'export'（生成并导出GIF）、'clear'（丢弃帧）"
+        },
+        "tabId": {
+          "type": "number",
+          "description": "标签页ID，用于标识此操作适用于哪个标签页组"
+        },
+        "coordinate": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "视口坐标[x, y]，用于拖放上传。对'export'动作是必需的，除非'download'为true。"
+        },
+        "download": {
+          "type": "boolean",
+          "description": "如果为true，下载GIF而不是拖放上传。仅适用于'export'动作。"
+        },
+        "filename": {
+          "type": "string",
+          "description": "导出的GIF的可选文件名（默认：'recording-[timestamp].gif'）。仅适用于'export'动作。"
+        },
+        "options": {
+          "type": "object",
+          "description": "适用于'export'动作的可选GIF增强选项。属性：showClickIndicators（布尔值）、showDragPaths（布尔值）、showActionLabels（布尔值）、showProgressBar（布尔值）、showWatermark（布尔值）、quality（数字1-30）。除quality（默认：10）外，所有默认为true。",
+          "properties": {
+            "showClickIndicators": {
+              "type": "boolean",
+              "description": "在点击位置显示橙色圆圈（默认：true）"
+            },
+            "showDragPaths": {
+              "type": "boolean",
+              "description": "为拖动操作显示红色箭头（默认：true）"
+            },
+            "showActionLabels": {
+              "type": "boolean",
+              "description": "显示描述操作黑色标签（默认：true）"
+            },
+            "showProgressBar": {
+              "type": "boolean",
+              "description": "在底部显示橙色进度条（默认：true）"
+            },
+            "showWatermark": {
+              "type": "boolean",
+              "description": "显示Claude logo水印（默认：true）"
+            },
+            "quality": {
+              "type": "number",
+              "description": "GIF压缩质量，1-30（越低 = 质量越好，编码越慢）。默认：10"
+            }
+          }
+        }
+      },
+      "required": [
+        "action",
+        "tabId"
+      ]
+    }
+  },
+  {
+    "name": "javascript_tool",
+    "description": "在当前页面的上下文中执行JavaScript代码。代码在页面上下文中运行，可以与DOM、window对象和页面变量交互。返回最后一个表达式的结果或任何抛出的错误。如果您没有有效的标签页ID，首先使用tabs_context获取可用的标签页。",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "必须设为'javascript_exec'"
+        },
+        "text": {
+          "type": "string",
+          "description": "要执行的JavaScript代码。代码将在页面上下文中评估。最后一个表达式的结果将自动返回。不要使用'return'语句 - 只需编写您想要评估的表达式（例如，'window.myData.value'而不是'return window.myData.value'）。您可以访问和修改DOM、调用页面函数以及与页面变量交互。"
+        },
+        "tabId": {
+          "type": "number",
+          "description": "执行代码的标签页ID。必须是当前组中的标签页。如果您没有有效的标签页ID，首先使用tabs_context。"
+        }
+      },
+      "required": [
+        "action",
+        "text",
+        "tabId"
+      ]
+    },
+    "cache_control": {
+      "type": "ephemeral"
+    }
+  },
+  {
+    "name": "navigate",
+    "description": "导航到URL，或在浏览器历史中前进/后退。如果您没有有效的标签页ID，首先使用tabs_context获取可用的标签页。",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "要导航到的URL。可以带或不带协议提供（默认为https://）。使用\"forward\"在历史中前进，或\"back\"返回历史。"
+        },
+        "tabId": {
+          "type": "number",
+          "description": "要导航的标签页ID。必须是当前组中的标签页。如果您没有有效的标签页ID，首先使用tabs_context。"
+        }
+      },
+      "required": [
+        "url",
+        "tabId"
+      ]
+    }
+  },
+  {
+    "name": "read_console_messages",
+    "description": "从特定标签页读取浏览器控制台消息（console.log、console.error、console.warn等）。用于调试JavaScript错误、查看应用程序日志或了解浏览器控制台中正在发生的情况。仅返回当前域的控制台消息。如果您没有有效的标签页ID，首先使用tabs_context获取可用的标签页。重要提示：始终提供模式来过滤消息 - 没有模式，您可能会收到太多无关消息。",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "tabId": {
+          "type": "number",
+          "description": "要读取控制台消息的标签页ID。必须是当前组中的标签页。如果您没有有效的标签页ID，首先使用tabs_context。"
+        },
+        "onlyErrors": {
+          "type": "boolean",
+          "description": "如果为true，仅返回错误和异常消息。默认为false（返回所有消息类型）。"
+        },
+        "clear": {
+          "type": "boolean",
+          "description": "如果为true，读取后清除控制台消息以避免后续调用时重复。默认为false。"
+        },
+        "pattern": {
+          "type": "string",
+          "description": "用于过滤控制台消息的正则表达式模式。只有与此模式匹配的消息才会被返回（例如，'error|warning'查找错误和警告，'MyApp'过滤特定应用程序的日志）。您应该始终提供模式以避免收到太多无关消息。"
+        },
+        "limit": {
+          "type": "number",
+          "description": "要返回的最大消息数。默认为100。仅在您需要更多结果时才增加。"
+        }
+      },
+      "required": [
+        "tabId"
+      ]
+    }
+  },
+  {
+    "name": "read_network_requests",
+    "description": "从特定标签页读取HTTP网络请求（XHR、Fetch、文档、图像等）。用于调试API调用、监控网络活动或了解页面正在发出的请求。返回当前页面发出的所有网络请求，包括跨域请求。当页面导航到不同域时，请求会自动清除。如果您没有有效的标签页ID，首先使用tabs_context获取可用的标签页。",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "tabId": {
+          "type": "number",
+          "description": "要读取网络请求的标签页ID。必须是当前组中的标签页。如果您没有有效的标签页ID，首先使用tabs_context。"
+        },
+        "urlPattern": {
+          "type": "string",
+          "description": "用于过滤请求的可选URL模式。只有URL包含此字符串的请求才会被返回（例如，'/api/'过滤API调用，'example.com'按域过滤）。"
+        },
+        "clear": {
+          "type": "boolean",
+          "description": "如果为true，读取后清除网络请求以避免后续调用时重复。默认为false。"
+        },
+        "limit": {
+          "type": "number",
+          "description": "要返回的最大请求数。默认为100。仅在您需要更多结果时才增加。"
+        }
+      },
+      "required": [
+        "tabId"
+      ]
+    }
+  },
+  {
+    "name": "read_page",
+    "description": "获取页面上元素的无障碍树表示。默认返回所有元素，包括不可见的元素。输出限制为50000个字符。如果输出超过此限制，您将收到错误，要求您指定更小的深度或使用ref_id专注于特定元素。可选地仅过滤交互元素。如果您没有有效的标签页ID，首先使用tabs_context获取可用的标签页。",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "filter": {
+          "type": "string",
+          "enum": [
+            "interactive",
+            "all"
+          ],
+          "description": "过滤元素：\"interactive\"仅用于按钮/链接/输入，\"all\"用于所有元素包括不可见元素（默认：所有元素）"
+        },
+        "tabId": {
+          "type": "number",
+          "description": "要读取的标签页ID。必须是当前组中的标签页。如果您没有有效的标签页ID，首先使用tabs_context。"
+        },
+        "depth": {
+          "type": "number",
+          "description": "要遍历的树的最大深度（默认：15）。如果输出太大，请使用更小的深度。"
+        },
+        "ref_id": {
+          "type": "string",
+          "description": "要读取的父元素的引用ID。将返回指定元素及其所有子元素。当输出太大时，使用此方法专注于页面的特定部分。"
+        }
+      },
+      "required": [
+        "tabId"
+      ]
+    }
+  },
+  {
+    "name": "resize_window",
+    "description": "将当前浏览器窗口调整到指定的尺寸。用于测试响应式设计或设置特定的屏幕尺寸。如果您没有有效的标签页ID，首先使用tabs_context获取可用的标签页。",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "number",
+          "description": "目标窗口宽度（像素）"
+        },
+        "height": {
+          "type": "number",
+          "description": "目标窗口高度（像素）"
+        },
+        "tabId": {
+          "type": "number",
+          "description": "获取窗口的标签页ID。必须是当前组中的标签页。如果您没有有效的标签页ID，首先使用tabs_context。"
+        }
+      },
+      "required": [
+        "width",
+        "height",
+        "tabId"
+      ]
+    }
+  },
+  {
+    "name": "tabs_context",
+    "description": "获取当前标签页组中所有标签页的上下文信息",
+    "input_schema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "tabs_create",
+    "description": "在当前标签页组中创建一个新的空白标签页",
+    "input_schema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "type": "custom",
+    "name": "turn_answer_start",
+    "description": "在本轮对用户的文本响应之前立即调用此工具。每轮都需要 - 无论您是否进行了工具调用。调用后，写下您的响应。之后不能再调用工具。",
+    "input_schema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "type": "custom",
+    "name": "update_plan",
+    "description": "在继续之前更新计划并呈现给用户以获得批准。",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "domains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "您将访问的域列表（例如，['github.com', 'stackoverflow.com']）。当用户接受计划时，这些域将在会话期间获得批准。"
+        },
+        "approach": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "您将遵循的有序步骤列表（例如，['导航到首页'、'搜索文档'、'提取关键信息']）。要简洁 - 目标是3-7个步骤。"
+        }
+      },
+      "required": [
+        "domains",
+        "approach"
+      ]
+    }
+  },
+  {
+    "name": "upload_image",
+    "description": "将先前捕获的截图或用户上传的图像上传到文件输入或拖放目标。支持两种方法：(1) ref - 用于定位特定元素，特别是隐藏的文件输入，(2) coordinate - 用于拖放到可见位置，如Google文档。提供ref或coordinate，不要同时提供两者。",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "imageId": {
+          "type": "string",
+          "description": "先前捕获的截图（来自computer工具的screenshot动作）或用户上传的图像的ID"
+        },
+        "ref": {
+          "type": "string",
+          "description": "来自read_page或find工具的元素引用ID（例如，\"ref_1\"、\"ref_2\"）。用于文件输入（特别是隐藏的）或特定元素。提供ref或coordinate，不要同时提供两者。"
+        },
+        "coordinate": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "视口坐标[x, y]，用于拖放到可见位置。用于拖放目标，如Google文档。提供ref或coordinate，不要同时提供两者。"
+        },
+        "tabId": {
+          "type": "number",
+          "description": "目标元素所在的标签页ID。这是图像将被上传到的位置。"
+        },
+        "filename": {
+          "type": "string",
+          "description": "上传文件的可选文件名（默认：\"image.png\"）"
+        }
+      },
+      "required": [
+        "imageId",
+        "tabId"
+      ]
+    }
+  }
+]
