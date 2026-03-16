@@ -8,9 +8,6 @@
   <a href="https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools">
     <img src="https://img.shields.io/badge/GitHub-30,000%2B%20lines-blue?style=flat-square&logo=github" alt="GitHub"/>
   </a>
-  <a href="https://discord.gg/NwzrWErdMU">
-    <img src="https://img.shields.io/badge/Discord-Join-blue?style=flat-square&logo=discord" alt="Discord"/>
-  </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License"/>
   </a>
